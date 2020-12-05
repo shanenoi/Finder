@@ -16,7 +16,7 @@ Finding.disable_color()
 result_arrays = Finding.main([
     f"v{type_search}",
     values,
-    excludes.split(" ")
+    [] if excludes == "" else excludes.split(" ")
 ])
 
 vim.command(f"let b:results = {result_arrays}")
