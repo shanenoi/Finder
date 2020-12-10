@@ -17,6 +17,12 @@ def disable_color():
     BLUE = ""
     RESET_ALL = ""
 
+def default_editor(path):
+    system(f"{DEFAULT_EDITOR} '{path}'")
+
+def default_index_input():
+    return input("index: ")
+
 
 class Finder(object):
 
@@ -24,12 +30,11 @@ class Finder(object):
     RESULT = []
     index = 0
     BREAK = ""
-    VIM_EXT = False
 
     def __init__(self, excludes:list=[]):
         self.COMMAND = " ".join([f"| grep -v \"{i}\"" for i in excludes])
 
-    def find(self):
+    def find(self, index_input=default_index_input, editor=default_editor):
         command_reader = popen(self.COMMAND)
         try:
             while (_file:=command_reader.readline()[:-1]):
@@ -37,18 +42,16 @@ class Finder(object):
         except KeyboardInterrupt:
             print(self.BREAK)
         finally:
-            return self.result_behaviour()
+            return self.result_behaviour(index_input=index_input,
+                                         editor=editor)
 
-    def result_behaviour(self):
-        if self.VIM_EXT:
-            return self.RESULT
-
+    def result_behaviour(self, index_input, editor):
         try:
-            index = input("index: ")
+            index = index_input()
             if index.isdigit():
                 index = int(index)
                 if index in range(len(self.RESULT)):
-                    system(f"{DEFAULT_EDITOR} {self.RESULT[index]}")
+                    editor(self.RESULT[index])
         except (KeyboardInterrupt, EOFError):
             print(self.BREAK)
         finally:
@@ -99,16 +102,6 @@ def main(args):
 
     elif args[0] == "c":
         somethings = FindByContent(args[1], args[2]).find()
-
-    elif args[0] == "vn":
-        __ = FindByName(args[1], args[2])
-        __.VIM_EXT = True
-        somethings = __.find()
-
-    elif args[0] == "vc":
-        __ = FindByContent(args[1], args[2])
-        __.VIM_EXT = True
-        somethings = __.find()
 
     return somethings
 

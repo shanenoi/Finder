@@ -1,61 +1,50 @@
-function! Fs(type_search, values, excludes)
+function! Fs(type_window, type_search, values, excludes)
 python3 << EOF
 import vim
 import sys
 import os
 
+def vim_index_input():
+    vim.command(f"let b:index = input('index: ')")
+    return vim.eval("b:index")
+
+def vim_editor_vertical_mode(path):
+    vim.command(f"vs {path}")
+
+def vim_editor_horizonal_mode(path):
+    vim.command(f"sp {path}")
+
+MAP_WINDOW = {"v": vim_editor_vertical_mode,
+              "h": vim_editor_horizonal_mode}
+
 source_path = vim.eval("g:source_path")
 type_search = vim.eval("a:type_search")
+type_window = vim.eval("a:type_window")
 values = vim.eval("a:values")
-excludes = vim.eval("a:excludes")
+_ = vim.eval("a:excludes")
+excludes = [] if not _ else _.split(" ")
 
 sys.path.append(os.path.dirname(source_path))
-Finding = __import__(os.path.splitext(os.path.basename(source_path))[0])
-Finding.disable_color()
+Finder = __import__(os.path.splitext(os.path.basename(source_path))[0])
+Finder.disable_color()
 
-result_arrays = Finding.main([
-    f"v{type_search}",
-    values,
-    [] if excludes == "" else excludes.split(" ")
-])
+if type_search == "n":
+    Finder.FindByName(values, excludes)\
+        .find(index_input=vim_index_input,
+              editor=MAP_WINDOW[type_window])
+elif type_search == "c":
+    Finder.FindByContent(values, excludes)\
+        .find(index_input=vim_index_input,
+              editor=MAP_WINDOW[type_window])
 
-vim.command(f"let b:results = {result_arrays}")
 EOF
-    return b:results
 endfunction
-
-
-function! InputValidatetion(exp)
-python3 << EOF
-import vim
-var = 1 if vim.eval("a:exp").isdigit() else 0
-vim.command(f"let b:result =  {var}")
-EOF
-    return b:result
-endfunction
-
-function! UnletVar()
-    unlet b:results
-    unlet b:index
-    unlet b:result
-endfunction
-
 
 function! Fv(type_search, values, excludes)
-    let b:results = Fs(a:type_search, a:values, a:excludes)
-    let b:index = input("index: ")
-    if InputValidatetion(b:index) == 1
-        execute "vs " . b:results[str2nr(b:index)]
-        call UnletVar()
-    endif
+    call Fs("v", a:type_search, a:values, a:excludes)
 endfunction
 
 
 function! Fh(type_search, values, excludes)
-    let b:results = Fs(a:type_search, a:values, a:excludes)
-    let b:index = input("index: ")
-    if InputValidatetion(b:index) == 1
-        execute "sp " . results[str2nr(b:index)]
-        call UnletVar()
-    endif
+    call Fs("h", a:type_search, a:values, a:excludes)
 endfunction
